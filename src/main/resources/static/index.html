@@ -128,11 +128,11 @@
                     <!-- Date Range Selection -->
                     <div class="col-md-3">
                         <label for="startDate" class="form-label">Start Date</label>
-                        <input type="date" id="startDate" class="form-control" value="2025-06-01" onchange="applyFilters()">
+                        <input type="date" id="startDate" class="form-control" value="2025-06-01" onchange="refreshDataForDateRange()">
                     </div>
                     <div class="col-md-3">
                         <label for="endDate" class="form-label">End Date</label>
-                        <input type="date" id="endDate" class="form-control" value="2025-06-30" onchange="applyFilters()">
+                        <input type="date" id="endDate" class="form-control" value="2025-06-30" onchange="refreshDataForDateRange()">
                     </div>
                     <div class="col-md-3">
                         <label for="groupBy" class="form-label">Group By</label>
@@ -929,10 +929,65 @@
             });
         }
 
-        // Apply filters and sorting
-        function applyFilters() {
+        // Refresh data when date range changes
+        async function refreshDataForDateRange() {
             const startDate = document.getElementById('startDate').value;
             const endDate = document.getElementById('endDate').value;
+            
+            if (!startDate || !endDate) {
+                return; // Don't refresh if either date is empty
+            }
+            
+            // Show loading state
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('dashboard').style.display = 'none';
+            
+            try {
+                // Fetch new data for the selected date range
+                allTransactions = await fetchExpenseData();
+                filteredTransactions = [...allTransactions];
+                
+                // Update category filter options
+                populateCategoryFilter(allTransactions);
+                populateVendorFilter(allTransactions);
+                populateDepartmentFilter(allTransactions);
+                
+                // Apply current filters to new data
+                applyFilters();
+                
+                // Update the dashboard header to show current date range
+                updateDashboardHeader(startDate, endDate);
+                
+            } catch (error) {
+                console.error('Error refreshing data:', error);
+                alert('Failed to fetch data for the selected date range. Please try again.');
+            } finally {
+                // Hide loading state
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('dashboard').style.display = 'block';
+            }
+        }
+        
+        // Update dashboard header with current date range
+        function updateDashboardHeader(startDate, endDate) {
+            const headerText = document.querySelector('.dashboard-header .lead');
+            if (headerText) {
+                const start = new Date(startDate).toLocaleDateString('en-US', { 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                });
+                const end = new Date(endDate).toLocaleDateString('en-US', { 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                });
+                headerText.textContent = `Course Creator 360 Inc - ${start} to ${end}`;
+            }
+        }
+
+        // Apply filters and sorting
+        function applyFilters() {
             const categoryFilter = document.getElementById('categoryFilter').value;
             const departmentFilter = document.getElementById('departmentFilter').value;
             const vendorFilter = document.getElementById('vendorFilter').value;
@@ -940,10 +995,8 @@
             const sortBy = document.getElementById('sortBy').value;
             const searchFilter = document.getElementById('searchFilter').value.toLowerCase();
 
-            // Filter transactions
+            // Filter transactions (date filtering handled by data refetch)
             filteredTransactions = allTransactions.filter(transaction => {
-                const matchesDateRange = (!startDate || transaction.date >= startDate) && 
-                                       (!endDate || transaction.date <= endDate);
                 const matchesCategory = !categoryFilter || transaction.category === categoryFilter;
                 const matchesDepartment = !departmentFilter || transaction.department === departmentFilter;
                 const matchesVendor = !vendorFilter || transaction.vendor === vendorFilter;
@@ -952,7 +1005,7 @@
                     transaction.description.toLowerCase().includes(searchFilter) ||
                     transaction.vendor.toLowerCase().includes(searchFilter);
 
-                return matchesDateRange && matchesCategory && matchesDepartment && 
+                return matchesCategory && matchesDepartment && 
                        matchesVendor && matchesAmount && matchesSearch;
             });
 
@@ -1142,6 +1195,13 @@
 
             populateFilters(allTransactions);
             applyFilters();
+            
+            // Update header with current date range
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            if (startDate && endDate) {
+                updateDashboardHeader(startDate, endDate);
+            }
 
             document.getElementById('loading').style.display = 'none';
             document.getElementById('dashboard').style.display = 'block';
