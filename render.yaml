@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: quickbooks-mcp-server
+    env: java
+    buildCommand: mvn clean package -DskipTests
+    startCommand: java -jar target/quickbooks-mcp-server-1.0.0.jar
+    plan: free
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: production
+      - key: PORT
+        value: 10000
+      - key: QUICKBOOKS_ACCESS_TOKEN
+        sync: false
+      - key: QUICKBOOKS_REFRESH_TOKEN
+        sync: false
+      - key: QUICKBOOKS_REALM_ID
+        sync: false
+      - key: QUICKBOOKS_CLIENT_ID
+        sync: false
+      - key: QUICKBOOKS_CLIENT_SECRET
+        sync: false 
