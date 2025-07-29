@@ -1,0 +1,1156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Course Creator 360 - Expense Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .dashboard-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem 0;
+        }
+        .stat-card {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1rem;
+            border-left: 4px solid #667eea;
+        }
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin-bottom: 2rem;
+        }
+        .table-responsive {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .category-badge {
+            font-size: 0.8rem;
+            padding: 0.3rem 0.8rem;
+        }
+        .amount-large {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .amount-medium {
+            color: #fd7e14;
+        }
+        .amount-small {
+            color: #28a745;
+        }
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
+        }
+        .filter-section {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Dashboard Header -->
+    <div class="dashboard-header">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-8">
+                    <h1><i class="fas fa-chart-line me-3"></i>Expense Dashboard</h1>
+                    <p class="lead mb-0">Course Creator 360 Inc - Financial Analysis</p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <a href="rules.html" class="btn btn-outline-light me-2">
+                        <i class="fas fa-cogs me-2"></i>Transformation Rules
+                    </a>
+                    <button class="btn btn-light" onclick="refreshData()">
+                        <i class="fas fa-sync-alt me-2"></i>Refresh Data
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container-fluid py-4">
+        <!-- Loading State -->
+        <div id="loading" class="loading">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <span class="ms-3">Loading expense data...</span>
+        </div>
+
+        <!-- Dashboard Content -->
+        <div id="dashboard" style="display: none;">
+            <!-- Summary Statistics -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <h6 class="text-muted">Total Expenses</h6>
+                        <h3 id="totalAmount" class="text-primary">$0.00</h3>
+                        <small id="transactionCount" class="text-muted">0 transactions</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <h6 class="text-muted">Largest Transaction</h6>
+                        <h3 id="largestTransaction" class="text-danger">$0.00</h3>
+                        <small id="largestTransactionDesc" class="text-muted">N/A</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <h6 class="text-muted">Avg Transaction</h6>
+                        <h3 id="avgTransaction" class="text-info">$0.00</h3>
+                        <small id="recurringCount" class="text-muted">0 recurring</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <h6 class="text-muted">Top Category</h6>
+                        <h3 id="topCategory" class="text-success">Loading...</h3>
+                        <small id="topCategoryPercent" class="text-muted">0%</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filters and Controls -->
+            <div class="filter-section">
+                <div class="row mb-3">
+                    <!-- Date Range Selection -->
+                    <div class="col-md-3">
+                        <label for="startDate" class="form-label">Start Date</label>
+                        <input type="date" id="startDate" class="form-control" value="2025-06-01" onchange="applyFilters()">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="endDate" class="form-label">End Date</label>
+                        <input type="date" id="endDate" class="form-control" value="2025-06-30" onchange="applyFilters()">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="groupBy" class="form-label">Group By</label>
+                        <select id="groupBy" class="form-select" onchange="applyGrouping()">
+                            <option value="none">No Grouping</option>
+                            <option value="vendor">Group by Vendor</option>
+                            <option value="department">Group by Department</option>
+                            <option value="category">Group by Category</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="viewMode" class="form-label">View Mode</label>
+                        <select id="viewMode" class="form-select" onchange="applyFilters()">
+                            <option value="transactions">Transaction Details</option>
+                            <option value="summary">Summary View</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-2">
+                        <label for="categoryFilter" class="form-label">Category</label>
+                        <select id="categoryFilter" class="form-select" onchange="applyFilters()">
+                            <option value="">All Categories</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="departmentFilter" class="form-label">Department</label>
+                        <select id="departmentFilter" class="form-select" onchange="applyFilters()">
+                            <option value="">All Departments</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="vendorFilter" class="form-label">Vendor</label>
+                        <select id="vendorFilter" class="form-select" onchange="applyFilters()">
+                            <option value="">All Vendors</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="amountFilter" class="form-label">Min Amount</label>
+                        <input type="number" id="amountFilter" class="form-control" placeholder="0" onchange="applyFilters()">
+                    </div>
+                    <div class="col-md-2">
+                        <label for="sortBy" class="form-label">Sort By</label>
+                        <select id="sortBy" class="form-select" onchange="applyFilters()">
+                            <option value="amount-desc">Amount (High to Low)</option>
+                            <option value="amount-asc">Amount (Low to High)</option>
+                            <option value="date-desc">Date (Newest First)</option>
+                            <option value="date-asc">Date (Oldest First)</option>
+                            <option value="vendor">Vendor</option>
+                            <option value="department">Department</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="searchFilter" class="form-label">Search</label>
+                        <input type="text" id="searchFilter" class="form-control" placeholder="Search..." onkeyup="applyFilters()">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Row -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-pie-chart me-2"></i>Expenses by Category</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container">
+                                <canvas id="categoryChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-bar-chart me-2"></i>Top 10 Largest Transactions</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container">
+                                <canvas id="topTransactionsChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transaction Table -->
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5><i class="fas fa-table me-2"></i>Transaction Details</h5>
+                    <span id="filteredCount" class="badge bg-primary">0 transactions</span>
+                </div>
+                <div class="card-body">
+                    <div id="groupedView" style="display: none;">
+                        <!-- Grouped view will be populated here -->
+                    </div>
+                    <div id="transactionTableContainer" class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Amount</th>
+                                    <th>Category</th>
+                                    <th>Department</th>
+                                    <th>Vendor</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody id="transactionTableBody">
+                                <!-- Transactions will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Global variables
+        let allTransactions = [];
+        let filteredTransactions = [];
+        let categoryChart = null;
+        let topTransactionsChart = null;
+
+        // Category definitions
+        const EXPENSE_CATEGORIES = {
+            'Software & SaaS': {
+                keywords: ['HIGHLEVEL', 'EXTENDLY', 'GOOGLE', 'USERPILOT', 'CHARGEFLOW', 'ONLINEJOBSPH', 'PADDLE', 'BB9 LLC', 'OPENAI', 'ADOBE', 'RAPIDAPI', 'X CORP'],
+                color: '#007bff'
+            },
+            'VA & Contractors': {
+                keywords: ['WISE INC', 'PAYONEER', 'COURSE CREATOR PRO INC'],
+                color: '#28a745'
+            },
+            'Affiliate Commissions': {
+                keywords: ['PAYPAL'],
+                color: '#ffc107'
+            },
+            'Marketing & Ads': {
+                keywords: ['DADGUMMARKETING', 'FACEBOOK'],
+                color: '#dc3545'
+            },
+            'Contract Labor': {
+                keywords: ['JACKSON CRANDALL', 'May Commissions'],
+                color: '#6f42c1'
+            },
+            'Tax Payments': {
+                keywords: ['IRS', 'TAX PAYMNT', 'USATAXPYMT'],
+                color: '#fd7e14'
+            },
+            'Bank & Financial': {
+                keywords: ['INST XFER', 'CURRENTDIGI'],
+                color: '#20c997'
+            },
+            'Business Services': {
+                keywords: ['AMAZON'],
+                color: '#6c757d'
+            }
+        };
+
+        // Department mapping with colors
+        const DEPARTMENT_MAPPING = {
+            "Technology": {
+                vendors: [
+                    "GoHighLevel", "Extendly", "OpenAI", "Anthropic (Claude)", "Cursor", "GitHub",
+                    "Cloudflare", "Vercel", "Google", "Zoom", "Zapier", "Adobe", "Trint",
+                    "Screenshot API", "Intuit QuickBooks", "Make", "RapidAPI", "Twilio Segment",
+                    "IPInfo", "Chargeflow", "Curated"
+                ],
+                color: "#007bff"
+            },
+            "Marketing": {
+                vendors: [
+                    "DadGum Marketing", "Meta/Facebook", "Meta/Facebook Ads", "Google Ads",
+                    "Meta Ads", "X (Twitter)", "LinkedIn", "Hyros"
+                ],
+                color: "#dc3545"
+            },
+            "Operations": {
+                vendors: [
+                    "Wise", "Payoneer", "PayPal", "Course Creator 360", "GoDaddy"
+                ],
+                color: "#28a745"
+            },
+            "Finance": {
+                vendors: [
+                    "Intuit QuickBooks", "Chargeflow"
+                ],
+                color: "#ffc107"
+            }
+        };
+
+        // Get department for vendor
+        function getDepartment(vendorName) {
+            for (const [department, info] of Object.entries(DEPARTMENT_MAPPING)) {
+                if (info.vendors.includes(vendorName)) {
+                    return department;
+                }
+            }
+            return "Other";
+        }
+
+        // Categorize transaction
+        function categorizeTransaction(description) {
+            if (!description) return 'Other/Miscellaneous';
+            
+            const descUpper = description.toUpperCase();
+            for (const [category, rules] of Object.entries(EXPENSE_CATEGORIES)) {
+                if (rules.keywords.some(keyword => descUpper.includes(keyword))) {
+                    return category;
+                }
+            }
+            return 'Other/Miscellaneous';
+        }
+
+        // Vendor name normalization functions
+        const VENDOR_NORMALIZATION_RULES = {
+            // Software & SaaS Companies
+            softwareVendorMap: {
+                "HIGHLEVEL": "GoHighLevel",
+                "GOHIGHLEVEL": "GoHighLevel",
+                "EXTENDLY": "Extendly",
+                "HYROS": "Hyros",
+                "MARKETHERO": "Hyros",
+                "OPENAI": "OpenAI",
+                "ANTHROPIC": "Anthropic (Claude)",
+                "CLAUDE.AI": "Anthropic (Claude)",
+                "CURSOR": "Cursor",
+                "GITHUB": "GitHub",
+                "CLOUDFLARE": "Cloudflare",
+                "VERCEL": "Vercel",
+                "GOOGLE": "Google",
+                "ZOOM": "Zoom",
+                "ZAPIER": "Zapier",
+                "ADOBE": "Adobe",
+                "TRINT": "Trint",
+                "SCREENSHOT API": "Screenshot API",
+                "SCREENSHOTAPI": "Screenshot API",
+                "INTUIT": "Intuit QuickBooks",
+                "QBOOKS": "Intuit QuickBooks",
+                "QUICKBOOKS": "Intuit QuickBooks",
+                "MAKE.COM": "Make",
+                "WWW.MAKE.COM": "Make",
+                "RAPIDAPI": "RapidAPI",
+                "SEGMENT": "Twilio Segment",
+                "TWILIO": "Twilio Segment",
+                "FACEBK": "Meta/Facebook",
+                "META": "Meta/Facebook",
+                "X CORP": "X (Twitter)",
+                "LINKTW": "LinkedIn",
+                "LINKEDIN": "LinkedIn",
+                "GODADDY": "GoDaddy",
+                "DNH*GODADDY": "GoDaddy",
+                "IPINFO": "IPInfo",
+                "CHARGEFLOW": "Chargeflow",
+                "CURATEDCONNECTOR": "Curated",
+                "CURATEDAPPS": "Curated"
+            },
+            
+            // Payment Processors & Financial
+            financialVendorMap: {
+                "WISE INC": "Wise",
+                "WISE": "Wise",
+                "PAYONEER": "Payoneer",
+                "PAYPAL": "PayPal"
+            },
+            
+            // Marketing & Advertising
+            marketingVendorMap: {
+                "DADGUMMARKETING": "DadGum Marketing",
+                "FACEBOOK.COM": "Meta/Facebook Ads",
+                "GOOGLE ADS": "Google Ads",
+                "META ADS": "Meta Ads"
+            },
+            
+            // Company-Specific Names
+            companyVendorMap: {
+                "COURSE CREATOR 360": "Course Creator 360",
+                "COURSECREATOR": "Course Creator 360"
+            }
+        };
+
+        // Normalize vendor name function
+        function normalizeVendorName(description, existingVendor = null) {
+            if (!description && !existingVendor) return "Unknown Vendor";
+            if (!description) return existingVendor;
+            
+            let normalized = description.toUpperCase();
+            
+            // Apply pattern-based rules
+            normalized = applyPatternRules(normalized, existingVendor);
+            
+            // Apply keyword mapping
+            normalized = applyKeywordMapping(normalized);
+            
+            // Apply cleanup rules
+            normalized = applyCleanupRules(normalized);
+            
+            // Apply case normalization
+            normalized = applyCaseNormalization(normalized);
+            
+            return normalized || existingVendor || "Unknown Vendor";
+        }
+
+        // Apply pattern-based rules
+        function applyPatternRules(description, existingVendor) {
+            // ACH/Wire Transfer patterns
+            if (description.includes("BUSINESS TO BUSINESS ACH")) {
+                if (description.includes("WISE")) return "Wise";
+                // Extract company name after "ACH "
+                const achMatch = description.match(/BUSINESS TO BUSINESS ACH\s+([^0-9\s]+)/);
+                if (achMatch) return achMatch[1].trim();
+            }
+            
+            // Payoneer patterns
+            if (description.includes("PAYONEER INC")) {
+                return "Payoneer";
+            }
+            
+            // Recurring payment patterns
+            if (description.includes("RECURRING PAYMENT")) {
+                // Extract vendor name between date and location/domain
+                const patterns = [
+                    /RECURRING PAYMENT.*?ON\s+\d{2}\/\d{2}\s+([^0-9]+?)(?:\s+[A-Z]{2,}|$)/,
+                    /AUTHORIZED ON\s+\d{2}\/\d{2}\s+([^0-9]+?)(?:\s+[A-Z]{2,}|$)/
+                ];
+                
+                for (const pattern of patterns) {
+                    const match = description.match(pattern);
+                    if (match) {
+                        let vendor = match[1].trim();
+                        // Clean up common suffixes
+                        vendor = vendor.replace(/\s+(INC\.?|LLC|CORP\.?).*$/, '');
+                        vendor = vendor.replace(/\s+[A-Z]{2,3}\.[A-Z]{2,}.*$/, ''); // Remove domains
+                        vendor = vendor.replace(/\s+\d{3}-\d{3}-\d{4}.*$/, ''); // Remove phone numbers
+                        return vendor;
+                    }
+                }
+            }
+            
+            // Purchase patterns
+            if (description.includes("PURCHASE") && description.includes("AUTHORIZED ON")) {
+                const purchaseMatch = description.match(/AUTHORIZED ON\s+\d{2}\/\d{2}\s+([^0-9]+?)(?:\s+[A-Z]{2,}|$)/);
+                if (purchaseMatch) {
+                    let vendor = purchaseMatch[1].trim();
+                    vendor = vendor.replace(/\s+[A-Z]{2,3}\.[A-Z]{2,}.*$/, ''); // Remove domains
+                    return vendor;
+                }
+            }
+            
+            // PayPal patterns
+            if (description.includes("PAYPAL *")) {
+                const paypalMatch = description.match(/PAYPAL \*([^X\s]+)/);
+                if (paypalMatch) {
+                    return paypalMatch[1].trim();
+                }
+            }
+            
+            return existingVendor;
+        }
+
+        // Apply keyword mapping
+        function applyKeywordMapping(description) {
+            const allMaps = [
+                VENDOR_NORMALIZATION_RULES.softwareVendorMap,
+                VENDOR_NORMALIZATION_RULES.financialVendorMap,
+                VENDOR_NORMALIZATION_RULES.marketingVendorMap,
+                VENDOR_NORMALIZATION_RULES.companyVendorMap
+            ];
+            
+            for (const vendorMap of allMaps) {
+                for (const [keyword, normalizedName] of Object.entries(vendorMap)) {
+                    if (description.includes(keyword)) {
+                        return normalizedName;
+                    }
+                }
+            }
+            
+            return description;
+        }
+
+        // Apply cleanup rules
+        function applyCleanupRules(description) {
+            let cleaned = description;
+            
+            // Remove common prefixes
+            const prefixesToRemove = [
+                "RECURRING PAYMENT",
+                "AUTHORIZED ON",
+                "PURCHASE",
+                "BUSINESS TO BUSINESS ACH",
+                "DNH\\*"
+            ];
+            
+            for (const prefix of prefixesToRemove) {
+                cleaned = cleaned.replace(new RegExp(`^${prefix}\\s*`, 'g'), '');
+            }
+            
+            // Remove card numbers and reference IDs
+            cleaned = cleaned.replace(/S[X]+\d+/g, '');
+            cleaned = cleaned.replace(/\d{6,}/g, '');
+            
+            // Remove phone numbers
+            cleaned = cleaned.replace(/\d{3}-\d{3}-\d{4}/g, '');
+            
+            // Remove URLs and domains
+            cleaned = cleaned.replace(/(https?:\/\/[^\s]+|[a-z]+\.[a-z]{2,})/gi, '');
+            
+            // Remove state codes and extra info
+            cleaned = cleaned.replace(/\b[A-Z]{2}\s+.*$/g, '');
+            
+            // Remove common suffixes
+            cleaned = cleaned.replace(/\s+(INC\.?|LLC|CORP\.?).*$/g, '');
+            
+            // Clean up extra whitespace
+            cleaned = cleaned.replace(/\s+/g, ' ').trim();
+            
+            return cleaned;
+        }
+
+        // Apply case normalization
+        function applyCaseNormalization(description) {
+            if (!description) return description;
+            
+            // Convert to proper case
+            let normalized = description.toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
+            
+            // Handle special cases
+            const specialCases = {
+                "Ai": "AI",
+                "Api": "API",
+                "Crm": "CRM",
+                "Sms": "SMS",
+                "Io": "IO",
+                "Github": "GitHub",
+                "Paypal": "PayPal",
+                "Godaddy": "GoDaddy",
+                "Gohighlevel": "GoHighLevel",
+                "Openai": "OpenAI"
+            };
+            
+            for (const [incorrect, correct] of Object.entries(specialCases)) {
+                normalized = normalized.replace(new RegExp(`\\b${incorrect}\\b`, 'g'), correct);
+            }
+            
+            return normalized;
+        }
+
+        // Fetch data from QuickBooks API
+        async function fetchExpenseData() {
+            try {
+                const startDate = document.getElementById('startDate').value || '2025-06-01';
+                const endDate = document.getElementById('endDate').value || '2025-06-30';
+                
+                const response = await fetch('/api/v1/quickbooks/query', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        query: `SELECT * FROM Purchase WHERE TxnDate >= '${startDate}' AND TxnDate <= '${endDate}' MAXRESULTS 1000`
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch data - using demo data to show transformation rules');
+                }
+
+                const data = await response.json();
+                return processTransactionData(data);
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                
+                // Show demo data to demonstrate transformation rules
+                const demoData = [
+                    {
+                        txnDate: '2025-06-15',
+                        totalAmt: 2500.00,
+                        entityRef: { name: 'Highlevel Httpsgohighle Tx' },
+                        privateNote: 'RECURRING PAYMENT AUTHORIZED ON 06/15 HIGHLEVEL INC. DALLAS TX USA'
+                    },
+                    {
+                        txnDate: '2025-06-20',
+                        totalAmt: 45.99,
+                        entityRef: { name: 'BUSINESS TO BUSINESS ACH' },
+                        privateNote: 'BUSINESS TO BUSINESS ACH Wise Inc WISE 240517 External Transfer'
+                    },
+                    {
+                        txnDate: '2025-06-10',
+                        totalAmt: 20.00,
+                        entityRef: { name: 'OpenAI Payment' },
+                        privateNote: 'RECURRING PAYMENT AUTHORIZED ON 06/10 OPENAI OPENAI.COM CA USA'
+                    },
+                    {
+                        txnDate: '2025-06-25',
+                        totalAmt: 299.00,
+                        entityRef: { name: 'DadGum Marketing LLC' },
+                        privateNote: 'DADGUMMARKETING DALLAS TX USA Marketing Services'
+                    },
+                    {
+                        txnDate: '2025-06-05',
+                        totalAmt: 15.99,
+                        entityRef: { name: 'Payoneer Inc.' },
+                        privateNote: 'Payoneer Inc. 153956 XXXXX8171 New York NY USA'
+                    },
+                    {
+                        txnDate: '2025-06-30',
+                        totalAmt: 12.99,
+                        entityRef: { name: 'ZAPIER' },
+                        privateNote: 'RECURRING PAYMENT AUTHORIZED ON 06/30 ZAPIER SAN FRANCISCO CA USA'
+                    },
+                    {
+                        txnDate: '2025-06-18',
+                        totalAmt: 9.99,
+                        entityRef: { name: 'CURSOR AI' },
+                        privateNote: 'PURCHASE AUTHORIZED ON 06/18 CURSOR AI SAN FRANCISCO CA USA'
+                    },
+                    {
+                        txnDate: '2025-06-22',
+                        totalAmt: 29.99,
+                        entityRef: { name: 'GitHub Copilot' },
+                        privateNote: 'RECURRING PAYMENT AUTHORIZED ON 06/22 GITHUB SAN FRANCISCO CA USA'
+                    }
+                ];
+
+                // Add demo data banner
+                const banner = document.createElement('div');
+                banner.className = 'alert alert-warning alert-dismissible fade show';
+                banner.innerHTML = `
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Demo Mode:</strong> Showing sample data to demonstrate transformation rules. 
+                    QuickBooks API authentication needed for live data.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+                document.querySelector('.container-fluid').insertBefore(banner, document.querySelector('.container-fluid').firstChild);
+
+                return processTransactionData(demoData);
+            }
+        }
+
+        // Process raw transaction data
+        function processTransactionData(rawData) {
+            const excludedVendors = ["Stockton Walbeck", "Dakota Walbeck", "Parker Walbeck", "Canyon Smith"];
+            const transactions = [];
+
+            rawData.forEach(item => {
+                const amount = parseFloat(item.totalAmt || 0);
+                const date = item.txnDate ? item.txnDate.substring(0, 10) : 'N/A';
+                const description = item.privateNote || item.memo || 'No Description Available';
+                const rawVendor = item.entityRef?.name || 'No Vendor Listed';
+
+                // Skip excluded vendors
+                if (excludedVendors.includes(rawVendor)) {
+                    return;
+                }
+
+                // Normalize vendor name using our rules
+                const vendor = normalizeVendorName(description, rawVendor);
+                const category = categorizeTransaction(description);
+                const department = getDepartment(vendor);
+
+                transactions.push({
+                    date,
+                    amount,
+                    description,
+                    vendor,
+                    category,
+                    department,
+                    rawVendor // Keep original for debugging
+                });
+            });
+
+            return transactions.sort((a, b) => b.amount - a.amount);
+        }
+
+        // Update summary statistics
+        function updateSummaryStats(transactions) {
+            const total = transactions.reduce((sum, t) => sum + t.amount, 0);
+            const largest = transactions.length > 0 ? transactions[0] : { amount: 0, description: 'N/A' };
+            const avg = transactions.length > 0 ? total / transactions.length : 0;
+
+            // Count categories
+            const categories = {};
+            transactions.forEach(t => {
+                categories[t.category] = (categories[t.category] || 0) + t.amount;
+            });
+
+            const topCategory = Object.entries(categories).sort((a, b) => b[1] - a[1])[0];
+
+            document.getElementById('totalAmount').textContent = `$${total.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+            document.getElementById('transactionCount').textContent = `${transactions.length} transactions`;
+            document.getElementById('largestTransaction').textContent = `$${largest.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+            document.getElementById('largestTransactionDesc').textContent = largest.description.substring(0, 30) + '...';
+            document.getElementById('avgTransaction').textContent = `$${avg.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+            
+            if (topCategory) {
+                document.getElementById('topCategory').textContent = topCategory[0];
+                document.getElementById('topCategoryPercent').textContent = `${((topCategory[1] / total) * 100).toFixed(1)}%`;
+            }
+        }
+
+        // Create category pie chart
+        function createCategoryChart(transactions) {
+            const categories = {};
+            transactions.forEach(t => {
+                categories[t.category] = (categories[t.category] || 0) + t.amount;
+            });
+
+            const labels = Object.keys(categories);
+            const data = Object.values(categories);
+            const colors = labels.map(label => EXPENSE_CATEGORIES[label]?.color || '#6c757d');
+
+            const ctx = document.getElementById('categoryChart').getContext('2d');
+            
+            if (categoryChart) {
+                categoryChart.destroy();
+            }
+
+            categoryChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: colors,
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.parsed;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = ((value / total) * 100).toFixed(1);
+                                    return `${label}: $${value.toLocaleString()} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Create top transactions bar chart
+        function createTopTransactionsChart(transactions) {
+            const top10 = transactions.slice(0, 10);
+            const labels = top10.map((t, i) => `#${i + 1}`);
+            const data = top10.map(t => t.amount);
+
+            const ctx = document.getElementById('topTransactionsChart').getContext('2d');
+            
+            if (topTransactionsChart) {
+                topTransactionsChart.destroy();
+            }
+
+            topTransactionsChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Amount ($)',
+                        data: data,
+                        backgroundColor: 'rgba(102, 126, 234, 0.8)',
+                        borderColor: 'rgba(102, 126, 234, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                title: function(context) {
+                                    const index = context[0].dataIndex;
+                                    return top10[index].description.substring(0, 50) + '...';
+                                },
+                                label: function(context) {
+                                    return `Amount: $${context.parsed.y.toLocaleString()}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value.toLocaleString();
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Populate transaction table
+        function populateTransactionTable(transactions) {
+            const tbody = document.getElementById('transactionTableBody');
+            tbody.innerHTML = '';
+
+            transactions.forEach(transaction => {
+                const row = document.createElement('tr');
+                
+                let amountClass = 'amount-small';
+                if (transaction.amount >= 5000) amountClass = 'amount-large';
+                else if (transaction.amount >= 1000) amountClass = 'amount-medium';
+
+                const categoryColor = EXPENSE_CATEGORIES[transaction.category]?.color || '#6c757d';
+                const departmentInfo = DEPARTMENT_MAPPING[transaction.department];
+                const departmentColor = departmentInfo ? departmentInfo.color : '#6c757d';
+
+                row.innerHTML = `
+                    <td>${transaction.date}</td>
+                    <td class="${amountClass}">$${transaction.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                    <td><span class="badge category-badge" style="background-color: ${categoryColor}">${transaction.category}</span></td>
+                    <td><span class="badge" style="background-color: ${departmentColor}">${transaction.department}</span></td>
+                    <td>${transaction.vendor}</td>
+                    <td title="${transaction.description}">${transaction.description.substring(0, 60)}${transaction.description.length > 60 ? '...' : ''}</td>
+                `;
+                
+                tbody.appendChild(row);
+            });
+
+            document.getElementById('filteredCount').textContent = `${transactions.length} transactions`;
+        }
+
+        // Populate filter dropdowns
+        function populateFilters(transactions) {
+            populateCategoryFilter(transactions);
+            populateDepartmentFilter(transactions);
+            populateVendorFilter(transactions);
+        }
+
+        // Populate category filter
+        function populateCategoryFilter(transactions) {
+            const categories = [...new Set(transactions.map(t => t.category))].sort();
+            const select = document.getElementById('categoryFilter');
+            
+            // Clear existing options except "All Categories"
+            select.innerHTML = '<option value="">All Categories</option>';
+            
+            categories.forEach(category => {
+                const option = document.createElement('option');
+                option.value = category;
+                option.textContent = category;
+                select.appendChild(option);
+            });
+        }
+
+        // Populate department filter
+        function populateDepartmentFilter(transactions) {
+            const departments = [...new Set(transactions.map(t => t.department))].sort();
+            const select = document.getElementById('departmentFilter');
+            
+            select.innerHTML = '<option value="">All Departments</option>';
+            
+            departments.forEach(department => {
+                const option = document.createElement('option');
+                option.value = department;
+                option.textContent = department;
+                select.appendChild(option);
+            });
+        }
+
+        // Populate vendor filter
+        function populateVendorFilter(transactions) {
+            const vendors = [...new Set(transactions.map(t => t.vendor))].sort();
+            const select = document.getElementById('vendorFilter');
+            
+            select.innerHTML = '<option value="">All Vendors</option>';
+            
+            vendors.forEach(vendor => {
+                const option = document.createElement('option');
+                option.value = vendor;
+                option.textContent = vendor;
+                select.appendChild(option);
+            });
+        }
+
+        // Apply filters and sorting
+        function applyFilters() {
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            const categoryFilter = document.getElementById('categoryFilter').value;
+            const departmentFilter = document.getElementById('departmentFilter').value;
+            const vendorFilter = document.getElementById('vendorFilter').value;
+            const amountFilter = parseFloat(document.getElementById('amountFilter').value) || 0;
+            const sortBy = document.getElementById('sortBy').value;
+            const searchFilter = document.getElementById('searchFilter').value.toLowerCase();
+
+            // Filter transactions
+            filteredTransactions = allTransactions.filter(transaction => {
+                const matchesDateRange = (!startDate || transaction.date >= startDate) && 
+                                       (!endDate || transaction.date <= endDate);
+                const matchesCategory = !categoryFilter || transaction.category === categoryFilter;
+                const matchesDepartment = !departmentFilter || transaction.department === departmentFilter;
+                const matchesVendor = !vendorFilter || transaction.vendor === vendorFilter;
+                const matchesAmount = transaction.amount >= amountFilter;
+                const matchesSearch = !searchFilter || 
+                    transaction.description.toLowerCase().includes(searchFilter) ||
+                    transaction.vendor.toLowerCase().includes(searchFilter);
+
+                return matchesDateRange && matchesCategory && matchesDepartment && 
+                       matchesVendor && matchesAmount && matchesSearch;
+            });
+
+            // Sort transactions
+            switch (sortBy) {
+                case 'amount-asc':
+                    filteredTransactions.sort((a, b) => a.amount - b.amount);
+                    break;
+                case 'amount-desc':
+                    filteredTransactions.sort((a, b) => b.amount - a.amount);
+                    break;
+                case 'date-asc':
+                    filteredTransactions.sort((a, b) => new Date(a.date) - new Date(b.date));
+                    break;
+                case 'date-desc':
+                    filteredTransactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+                    break;
+                case 'vendor':
+                    filteredTransactions.sort((a, b) => a.vendor.localeCompare(b.vendor));
+                    break;
+                case 'department':
+                    filteredTransactions.sort((a, b) => a.department.localeCompare(b.department));
+                    break;
+            }
+
+            // Apply current grouping
+            applyGrouping();
+        }
+
+        // Apply grouping
+        function applyGrouping() {
+            const groupBy = document.getElementById('groupBy').value;
+            const viewMode = document.getElementById('viewMode').value;
+
+            if (groupBy === 'none') {
+                document.getElementById('groupedView').style.display = 'none';
+                document.getElementById('transactionTableContainer').style.display = 'block';
+                
+                if (viewMode === 'summary') {
+                    populateSummaryTable(filteredTransactions);
+                } else {
+                    populateTransactionTable(filteredTransactions);
+                }
+            } else {
+                document.getElementById('groupedView').style.display = 'block';
+                document.getElementById('transactionTableContainer').style.display = 'none';
+                populateGroupedView(filteredTransactions, groupBy);
+            }
+
+            // Update other displays
+            updateSummaryStats(filteredTransactions);
+            createCategoryChart(filteredTransactions);
+            createTopTransactionsChart(filteredTransactions);
+        }
+
+        // Populate grouped view
+        function populateGroupedView(transactions, groupBy) {
+            const groups = {};
+            
+            transactions.forEach(transaction => {
+                const key = transaction[groupBy];
+                if (!groups[key]) {
+                    groups[key] = [];
+                }
+                groups[key].push(transaction);
+            });
+
+            let html = '';
+            Object.entries(groups)
+                .sort(([,a], [,b]) => b.reduce((sum, t) => sum + t.amount, 0) - a.reduce((sum, t) => sum + t.amount, 0))
+                .forEach(([groupName, groupTransactions]) => {
+                    const total = groupTransactions.reduce((sum, t) => sum + t.amount, 0);
+                    const count = groupTransactions.length;
+                    
+                    html += `
+                        <div class="card mb-3">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-folder me-2"></i>${groupName}
+                                    <span class="badge bg-secondary ms-2">${count} transactions</span>
+                                </h6>
+                                <span class="fw-bold text-primary">$${total.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Date</th>
+                                                <th>Amount</th>
+                                                ${groupBy !== 'vendor' ? '<th>Vendor</th>' : ''}
+                                                ${groupBy !== 'department' ? '<th>Department</th>' : ''}
+                                                ${groupBy !== 'category' ? '<th>Category</th>' : ''}
+                                                <th>Description</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                    `;
+                    
+                    groupTransactions.forEach(transaction => {
+                        let amountClass = 'amount-small';
+                        if (transaction.amount >= 5000) amountClass = 'amount-large';
+                        else if (transaction.amount >= 1000) amountClass = 'amount-medium';
+
+                        html += `
+                            <tr>
+                                <td>${transaction.date}</td>
+                                <td class="${amountClass}">$${transaction.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                                ${groupBy !== 'vendor' ? `<td>${transaction.vendor}</td>` : ''}
+                                ${groupBy !== 'department' ? `<td><span class="badge bg-secondary">${transaction.department}</span></td>` : ''}
+                                ${groupBy !== 'category' ? `<td><span class="badge bg-info">${transaction.category}</span></td>` : ''}
+                                <td title="${transaction.description}">${transaction.description.substring(0, 50)}${transaction.description.length > 50 ? '...' : ''}</td>
+                            </tr>
+                        `;
+                    });
+                    
+                    html += `
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+            document.getElementById('groupedView').innerHTML = html;
+            document.getElementById('filteredCount').textContent = `${transactions.length} transactions`;
+        }
+
+        // Populate summary table
+        function populateSummaryTable(transactions) {
+            // Group by vendor for summary
+            const vendorSummary = {};
+            
+            transactions.forEach(transaction => {
+                if (!vendorSummary[transaction.vendor]) {
+                    vendorSummary[transaction.vendor] = {
+                        vendor: transaction.vendor,
+                        department: transaction.department,
+                        totalAmount: 0,
+                        transactionCount: 0,
+                        avgAmount: 0
+                    };
+                }
+                vendorSummary[transaction.vendor].totalAmount += transaction.amount;
+                vendorSummary[transaction.vendor].transactionCount++;
+            });
+
+            // Calculate averages
+            Object.values(vendorSummary).forEach(summary => {
+                summary.avgAmount = summary.totalAmount / summary.transactionCount;
+            });
+
+            const tbody = document.getElementById('transactionTableBody');
+            tbody.innerHTML = '';
+
+            Object.values(vendorSummary)
+                .sort((a, b) => b.totalAmount - a.totalAmount)
+                .forEach(summary => {
+                    const row = document.createElement('tr');
+                    
+                    let amountClass = 'amount-small';
+                    if (summary.totalAmount >= 5000) amountClass = 'amount-large';
+                    else if (summary.totalAmount >= 1000) amountClass = 'amount-medium';
+
+                    row.innerHTML = `
+                        <td colspan="2" class="fw-bold">${summary.vendor}</td>
+                        <td><span class="badge bg-secondary">${summary.department}</span></td>
+                        <td class="${amountClass}">$${summary.totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                        <td>${summary.transactionCount} transactions</td>
+                        <td>Avg: $${summary.avgAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                    `;
+                    
+                    tbody.appendChild(row);
+                });
+
+            document.getElementById('filteredCount').textContent = `${Object.keys(vendorSummary).length} vendors`;
+        }
+
+        // Refresh data
+        async function refreshData() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('dashboard').style.display = 'none';
+
+            allTransactions = await fetchExpenseData();
+            filteredTransactions = [...allTransactions];
+
+            populateFilters(allTransactions);
+            applyFilters();
+
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'block';
+        }
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            refreshData();
+        });
+    </script>
+</body>
+</html>

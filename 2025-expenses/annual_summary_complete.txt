@@ -1,0 +1,31 @@
+2025 ANNUAL EXPENSE SUMMARY - COMPLETE DATA
+============================================================
+
+Excluded vendors: Stockton Walbeck, Dakota Walbeck, Parker Walbeck, Canyon Smith
+
+Previous reports were limited to ~100 transactions per month.
+These reports include ALL transactions using MAXRESULTS.
+
+January     : $ 75,434.16 (153 transactions)
+  Excluded  : $144,109.00 (  4 transactions)
+February    : $ 81,342.28 (178 transactions)
+  Excluded  : $ 88,469.00 (  4 transactions)
+March       : $119,445.80 (211 transactions)
+  Excluded  : $103,521.00 (  4 transactions)
+April       : $204,134.85 (163 transactions)
+  Excluded  : $ 34,583.00 (  5 transactions)
+May         : $110,652.15 (148 transactions)
+  Excluded  : $ 99,024.00 (  4 transactions)
+June        : $119,168.55 (150 transactions)
+  Excluded  : $ 96,615.00 (  4 transactions)
+July        : $ 71,074.75 ( 44 transactions)
+  Excluded  : $135,288.00 (  4 transactions)
+August      : $      0.00 (  0 transactions)
+September   : $      0.00 (  0 transactions)
+October     : $      0.00 (  0 transactions)
+November    : $      0.00 (  0 transactions)
+December    : $      0.00 (  0 transactions)
+============================================================
+TOTAL       : $781,252.54 (1047 transactions)
+EXCLUDED    : $701,609.00 ( 29 transactions)
+GRAND TOTAL : $1,482,861.54 (1076 transactions)

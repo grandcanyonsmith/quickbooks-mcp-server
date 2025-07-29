@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vendor Transformation Rules - Course Creator 360</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem 0;
+        }
+        .rule-card {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1rem;
+            border-left: 4px solid #667eea;
+        }
+        .rule-example {
+            background: #f8f9fa;
+            border-radius: 5px;
+            padding: 0.5rem;
+            font-family: monospace;
+            font-size: 0.9rem;
+            margin: 0.5rem 0;
+        }
+        .test-area {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-8">
+                    <h1><i class="fas fa-cogs me-3"></i>Vendor Transformation Rules</h1>
+                    <p class="lead mb-0">Configure and test vendor name normalization rules</p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <a href="index.html" class="btn btn-light">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container-fluid py-4">
+        <!-- Rule Testing Area -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="test-area">
+                    <h5><i class="fas fa-flask me-2"></i>Test Transformation Rules</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label for="testInput" class="form-label">Input Transaction Description:</label>
+                            <textarea id="testInput" class="form-control" rows="3" placeholder="Enter a transaction description to test..."></textarea>
+                            <button class="btn btn-primary mt-2" onclick="testTransformation()">
+                                <i class="fas fa-play me-2"></i>Test Transformation
+                            </button>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Transformation Result:</label>
+                            <div id="testResult" class="border p-3 bg-white rounded" style="min-height: 100px;">
+                                <em class="text-muted">Enter a description and click "Test Transformation" to see the result</em>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rules Configuration -->
+        <div class="row">
+            <!-- Pattern-Based Rules -->
+            <div class="col-md-6 mb-4">
+                <div class="rule-card">
+                    <h5><i class="fas fa-search me-2"></i>Pattern-Based Rules</h5>
+                    <p class="text-muted">Rules that extract vendor names from structured transaction patterns</p>
+                    
+                    <div class="mb-3">
+                        <h6>ACH/Wire Transfer Patterns</h6>
+                        <div class="rule-example">
+                            "BUSINESS TO BUSINESS ACH Wise Inc..." → "Wise"
+                        </div>
+                        <div class="rule-example">
+                            "Payoneer Inc. 153956 XXXXX8171..." → "Payoneer"
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <h6>Recurring Payment Patterns</h6>
+                        <div class="rule-example">
+                            "RECURRING PAYMENT ... HIGHLEVEL INC. ..." → "GoHighLevel"
+                        </div>
+                        <div class="rule-example">
+                            "RECURRING PAYMENT ... OPENAI OPENAI.COM ..." → "OpenAI"
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <h6>PayPal Patterns</h6>
+                        <div class="rule-example">
+                            "PAYPAL *REMOVAL AI XXXXXX7733..." → "Removal.ai"
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Keyword Mapping Rules -->
+            <div class="col-md-6 mb-4">
+                <div class="rule-card">
+                    <h5><i class="fas fa-tags me-2"></i>Keyword Mapping Rules</h5>
+                    <p class="text-muted">Direct keyword matches mapped to clean vendor names</p>
+                    
+                    <div class="mb-3">
+                        <h6>Software & SaaS</h6>
+                        <div id="softwareRules" class="small">
+                            <!-- Rules will be populated by JavaScript -->
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <h6>Payment Processors</h6>
+                        <div id="financialRules" class="small">
+                            <!-- Rules will be populated by JavaScript -->
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <h6>Marketing & Advertising</h6>
+                        <div id="marketingRules" class="small">
+                            <!-- Rules will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Department Mapping Rules -->
+        <div class="row">
+            <div class="col-12 mb-4">
+                <div class="rule-card">
+                    <h5><i class="fas fa-building me-2"></i>Department Mapping Rules</h5>
+                    <p class="text-muted">Map vendors to business departments for organizational reporting</p>
+                    
+                    <div class="row">
+                        <div class="col-md-3">
+                            <h6>Technology</h6>
+                            <div id="techDept" class="small">
+                                <!-- Will be populated by JavaScript -->
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <h6>Marketing</h6>
+                            <div id="marketingDept" class="small">
+                                <!-- Will be populated by JavaScript -->
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <h6>Operations</h6>
+                            <div id="operationsDept" class="small">
+                                <!-- Will be populated by JavaScript -->
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <h6>Finance</h6>
+                            <div id="financeDept" class="small">
+                                <!-- Will be populated by JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Export/Import Rules -->
+        <div class="row">
+            <div class="col-12">
+                <div class="rule-card">
+                    <h5><i class="fas fa-download me-2"></i>Export/Import Rules</h5>
+                    <p class="text-muted">Export current rules or import new rule configurations</p>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <button class="btn btn-success me-2" onclick="exportRules()">
+                                <i class="fas fa-download me-2"></i>Export Rules (JSON)
+                            </button>
+                            <button class="btn btn-info" onclick="exportRulesMarkdown()">
+                                <i class="fas fa-file-alt me-2"></i>Export Rules (Markdown)
+                            </button>
+                        </div>
+                        <div class="col-md-6">
+                            <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importRules()">
+                            <button class="btn btn-warning" onclick="document.getElementById('importFile').click()">
+                                <i class="fas fa-upload me-2"></i>Import Rules
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Include the same vendor normalization rules from the main dashboard
+        const VENDOR_NORMALIZATION_RULES = {
+            softwareVendorMap: {
+                "HIGHLEVEL": "GoHighLevel",
+                "GOHIGHLEVEL": "GoHighLevel",
+                "EXTENDLY": "Extendly",
+                "HYROS": "Hyros",
+                "MARKETHERO": "Hyros",
+                "OPENAI": "OpenAI",
+                "ANTHROPIC": "Anthropic (Claude)",
+                "CLAUDE.AI": "Anthropic (Claude)",
+                "CURSOR": "Cursor",
+                "GITHUB": "GitHub",
+                "CLOUDFLARE": "Cloudflare",
+                "VERCEL": "Vercel",
+                "GOOGLE": "Google",
+                "ZOOM": "Zoom",
+                "ZAPIER": "Zapier",
+                "ADOBE": "Adobe",
+                "TRINT": "Trint",
+                "SCREENSHOT API": "Screenshot API",
+                "SCREENSHOTAPI": "Screenshot API",
+                "INTUIT": "Intuit QuickBooks",
+                "QBOOKS": "Intuit QuickBooks",
+                "QUICKBOOKS": "Intuit QuickBooks",
+                "MAKE.COM": "Make",
+                "WWW.MAKE.COM": "Make",
+                "RAPIDAPI": "RapidAPI",
+                "SEGMENT": "Twilio Segment",
+                "TWILIO": "Twilio Segment",
+                "FACEBK": "Meta/Facebook",
+                "META": "Meta/Facebook",
+                "X CORP": "X (Twitter)",
+                "LINKTW": "LinkedIn",
+                "LINKEDIN": "LinkedIn",
+                "GODADDY": "GoDaddy",
+                "DNH*GODADDY": "GoDaddy",
+                "IPINFO": "IPInfo",
+                "CHARGEFLOW": "Chargeflow",
+                "CURATEDCONNECTOR": "Curated",
+                "CURATEDAPPS": "Curated"
+            },
+            financialVendorMap: {
+                "WISE INC": "Wise",
+                "WISE": "Wise",
+                "PAYONEER": "Payoneer",
+                "PAYPAL": "PayPal"
+            },
+            marketingVendorMap: {
+                "DADGUMMARKETING": "DadGum Marketing",
+                "FACEBOOK.COM": "Meta/Facebook Ads",
+                "GOOGLE ADS": "Google Ads",
+                "META ADS": "Meta Ads"
+            },
+            companyVendorMap: {
+                "COURSE CREATOR 360": "Course Creator 360",
+                "COURSECREATOR": "Course Creator 360"
+            }
+        };
+
+        // Department mapping
+        const DEPARTMENT_MAPPING = {
+            "Technology": [
+                "GoHighLevel", "Extendly", "OpenAI", "Anthropic (Claude)", "Cursor", "GitHub",
+                "Cloudflare", "Vercel", "Google", "Zoom", "Zapier", "Adobe", "Trint",
+                "Screenshot API", "Intuit QuickBooks", "Make", "RapidAPI", "Twilio Segment",
+                "IPInfo", "Chargeflow", "Curated"
+            ],
+            "Marketing": [
+                "DadGum Marketing", "Meta/Facebook", "Meta/Facebook Ads", "Google Ads",
+                "Meta Ads", "X (Twitter)", "LinkedIn", "Hyros"
+            ],
+            "Operations": [
+                "Wise", "Payoneer", "PayPal", "Course Creator 360", "GoDaddy"
+            ],
+            "Finance": [
+                "Intuit QuickBooks", "Chargeflow"
+            ]
+        };
+
+        // Vendor normalization functions (copy from main dashboard)
+        function normalizeVendorName(description, existingVendor = null) {
+            if (!description && !existingVendor) return "Unknown Vendor";
+            if (!description) return existingVendor;
+            
+            let normalized = description.toUpperCase();
+            normalized = applyPatternRules(normalized, existingVendor);
+            normalized = applyKeywordMapping(normalized);
+            normalized = applyCleanupRules(normalized);
+            normalized = applyCaseNormalization(normalized);
+            
+            return normalized || existingVendor || "Unknown Vendor";
+        }
+
+        function applyPatternRules(description, existingVendor) {
+            if (description.includes("BUSINESS TO BUSINESS ACH")) {
+                if (description.includes("WISE")) return "Wise";
+                const achMatch = description.match(/BUSINESS TO BUSINESS ACH\s+([^0-9\s]+)/);
+                if (achMatch) return achMatch[1].trim();
+            }
+            
+            if (description.includes("PAYONEER INC")) {
+                return "Payoneer";
+            }
+            
+            if (description.includes("RECURRING PAYMENT")) {
+                const patterns = [
+                    /RECURRING PAYMENT.*?ON\s+\d{2}\/\d{2}\s+([^0-9]+?)(?:\s+[A-Z]{2,}|$)/,
+                    /AUTHORIZED ON\s+\d{2}\/\d{2}\s+([^0-9]+?)(?:\s+[A-Z]{2,}|$)/
+                ];
+                
+                for (const pattern of patterns) {
+                    const match = description.match(pattern);
+                    if (match) {
+                        let vendor = match[1].trim();
+                        vendor = vendor.replace(/\s+(INC\.?|LLC|CORP\.?).*$/, '');
+                        vendor = vendor.replace(/\s+[A-Z]{2,3}\.[A-Z]{2,}.*$/, '');
+                        vendor = vendor.replace(/\s+\d{3}-\d{3}-\d{4}.*$/, '');
+                        return vendor;
+                    }
+                }
+            }
+            
+            if (description.includes("PURCHASE") && description.includes("AUTHORIZED ON")) {
+                const purchaseMatch = description.match(/AUTHORIZED ON\s+\d{2}\/\d{2}\s+([^0-9]+?)(?:\s+[A-Z]{2,}|$)/);
+                if (purchaseMatch) {
+                    let vendor = purchaseMatch[1].trim();
+                    vendor = vendor.replace(/\s+[A-Z]{2,3}\.[A-Z]{2,}.*$/, '');
+                    return vendor;
+                }
+            }
+            
+            if (description.includes("PAYPAL *")) {
+                const paypalMatch = description.match(/PAYPAL \*([^X\s]+)/);
+                if (paypalMatch) {
+                    return paypalMatch[1].trim();
+                }
+            }
+            
+            return existingVendor;
+        }
+
+        function applyKeywordMapping(description) {
+            const allMaps = [
+                VENDOR_NORMALIZATION_RULES.softwareVendorMap,
+                VENDOR_NORMALIZATION_RULES.financialVendorMap,
+                VENDOR_NORMALIZATION_RULES.marketingVendorMap,
+                VENDOR_NORMALIZATION_RULES.companyVendorMap
+            ];
+            
+            for (const vendorMap of allMaps) {
+                for (const [keyword, normalizedName] of Object.entries(vendorMap)) {
+                    if (description.includes(keyword)) {
+                        return normalizedName;
+                    }
+                }
+            }
+            
+            return description;
+        }
+
+        function applyCleanupRules(description) {
+            let cleaned = description;
+            
+            const prefixesToRemove = [
+                "RECURRING PAYMENT",
+                "AUTHORIZED ON",
+                "PURCHASE",
+                "BUSINESS TO BUSINESS ACH",
+                "DNH\\*"
+            ];
+            
+            for (const prefix of prefixesToRemove) {
+                cleaned = cleaned.replace(new RegExp(`^${prefix}\\s*`, 'g'), '');
+            }
+            
+            cleaned = cleaned.replace(/S[X]+\d+/g, '');
+            cleaned = cleaned.replace(/\d{6,}/g, '');
+            cleaned = cleaned.replace(/\d{3}-\d{3}-\d{4}/g, '');
+            cleaned = cleaned.replace(/(https?:\/\/[^\s]+|[a-z]+\.[a-z]{2,})/gi, '');
+            cleaned = cleaned.replace(/\b[A-Z]{2}\s+.*$/g, '');
+            cleaned = cleaned.replace(/\s+(INC\.?|LLC|CORP\.?).*$/g, '');
+            cleaned = cleaned.replace(/\s+/g, ' ').trim();
+            
+            return cleaned;
+        }
+
+        function applyCaseNormalization(description) {
+            if (!description) return description;
+            
+            let normalized = description.toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
+            
+            const specialCases = {
+                "Ai": "AI",
+                "Api": "API",
+                "Crm": "CRM",
+                "Sms": "SMS",
+                "Io": "IO",
+                "Github": "GitHub",
+                "Paypal": "PayPal",
+                "Godaddy": "GoDaddy",
+                "Gohighlevel": "GoHighLevel",
+                "Openai": "OpenAI"
+            };
+            
+            for (const [incorrect, correct] of Object.entries(specialCases)) {
+                normalized = normalized.replace(new RegExp(`\\b${incorrect}\\b`, 'g'), correct);
+            }
+            
+            return normalized;
+        }
+
+        function getDepartment(vendorName) {
+            for (const [department, vendors] of Object.entries(DEPARTMENT_MAPPING)) {
+                if (vendors.includes(vendorName)) {
+                    return department;
+                }
+            }
+            return "Other";
+        }
+
+        // Test transformation function
+        function testTransformation() {
+            const input = document.getElementById('testInput').value;
+            if (!input.trim()) {
+                document.getElementById('testResult').innerHTML = '<em class="text-muted">Please enter a transaction description</em>';
+                return;
+            }
+
+            const normalized = normalizeVendorName(input, null);
+            const department = getDepartment(normalized);
+            
+            document.getElementById('testResult').innerHTML = `
+                <strong>Normalized Vendor:</strong> ${normalized}<br>
+                <strong>Department:</strong> ${department}<br>
+                <strong>Original Input:</strong> ${input}
+            `;
+        }
+
+        // Populate rule displays
+        function populateRuleDisplays() {
+            // Software rules
+            const softwareHtml = Object.entries(VENDOR_NORMALIZATION_RULES.softwareVendorMap)
+                .map(([key, value]) => `<div class="rule-example">"${key}" → "${value}"</div>`)
+                .join('');
+            document.getElementById('softwareRules').innerHTML = softwareHtml;
+
+            // Financial rules
+            const financialHtml = Object.entries(VENDOR_NORMALIZATION_RULES.financialVendorMap)
+                .map(([key, value]) => `<div class="rule-example">"${key}" → "${value}"</div>`)
+                .join('');
+            document.getElementById('financialRules').innerHTML = financialHtml;
+
+            // Marketing rules
+            const marketingHtml = Object.entries(VENDOR_NORMALIZATION_RULES.marketingVendorMap)
+                .map(([key, value]) => `<div class="rule-example">"${key}" → "${value}"</div>`)
+                .join('');
+            document.getElementById('marketingRules').innerHTML = marketingHtml;
+
+            // Department mappings
+            Object.entries(DEPARTMENT_MAPPING).forEach(([dept, vendors]) => {
+                const deptId = dept.toLowerCase() === 'marketing' ? 'marketingDept' : 
+                              dept.toLowerCase() === 'technology' ? 'techDept' :
+                              dept.toLowerCase() === 'operations' ? 'operationsDept' : 'financeDept';
+                const html = vendors.map(vendor => `<div class="badge bg-secondary me-1 mb-1">${vendor}</div>`).join('');
+                document.getElementById(deptId).innerHTML = html;
+            });
+        }
+
+        // Export/Import functions
+        function exportRules() {
+            const rules = {
+                vendorRules: VENDOR_NORMALIZATION_RULES,
+                departmentMapping: DEPARTMENT_MAPPING
+            };
+            
+            const blob = new Blob([JSON.stringify(rules, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'vendor-transformation-rules.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function exportRulesMarkdown() {
+            // This would generate the markdown documentation
+            window.open('vendor-normalization-rules.md');
+        }
+
+        function importRules() {
+            const file = document.getElementById('importFile').files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const rules = JSON.parse(e.target.result);
+                    // Update rules and refresh displays
+                    Object.assign(VENDOR_NORMALIZATION_RULES, rules.vendorRules);
+                    Object.assign(DEPARTMENT_MAPPING, rules.departmentMapping);
+                    populateRuleDisplays();
+                    alert('Rules imported successfully!');
+                } catch (error) {
+                    alert('Error importing rules: ' + error.message);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            populateRuleDisplays();
+        });
+    </script>
+</body>
+</html> 
