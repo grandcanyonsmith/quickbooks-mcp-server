@@ -1,21 +1,24 @@
-# Use OpenJDK 17 as base image
+# Use Maven with OpenJDK 17 for building
+FROM maven:3.9.4-openjdk-17-slim AS build
+
+# Set the working directory in the container
+WORKDIR /app
+
+# Copy the pom.xml and source code
+COPY pom.xml ./
+COPY src ./src
+
+# Download dependencies and build the application
+RUN mvn clean package -DskipTests
+
+# Use OpenJDK 17 for runtime
 FROM openjdk:17-jdk-slim
 
 # Set the working directory in the container
 WORKDIR /app
 
-# Copy the Maven wrapper and pom.xml
-COPY .mvn/ .mvn
-COPY mvnw pom.xml ./
-
-# Download dependencies (this layer will be cached)
-RUN ./mvnw dependency:go-offline -B
-
-# Copy the source code
-COPY src ./src
-
-# Build the application
-RUN ./mvnw clean package -DskipTests
+# Copy the built JAR from the build stage
+COPY --from=build /app/target/quickbooks-mcp-server-1.0.0.jar app.jar
 
 # Expose the port that the application will run on
 EXPOSE 8080
@@ -24,4 +27,4 @@ EXPOSE 8080
 ENV SPRING_PROFILES_ACTIVE=production
 
 # Run the application
-CMD ["java", "-jar", "target/quickbooks-mcp-server-1.0.0.jar"] 
+CMD ["java", "-jar", "app.jar"] 
